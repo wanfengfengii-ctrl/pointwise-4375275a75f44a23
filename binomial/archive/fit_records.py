@@ -42,11 +42,17 @@ def load_fit(store, fit_id):
 
 def read_result(store, result_id):
     row = store.connection.execute("SELECT kind FROM records WHERE id=?", (result_id,)).fetchone()
-    if row is None or row[0] not in ("fit", "report"):
+    if row is None or row[0] not in ("fit", "report", "null_fit", "null_comparison"):
         raise ResultNotFound("published result not found")
     if row[0] == "fit":
         value = load_fit(store, result_id).to_value()
-    else:
+    elif row[0] == "report":
         from binomial.archive.report_records import load_report
         value = load_report(store, result_id).to_value()
+    elif row[0] == "null_fit":
+        from binomial.archive.null_records import load_null
+        value = load_null(store, result_id).to_value()
+    else:
+        from binomial.archive.null_records import load_comparison
+        value = load_comparison(store, result_id).to_value()
     return {"result_id": result_id, "kind": row[0], **value}
